@@ -35,142 +35,163 @@ public:
     virtual void algorithm(int iteration) = 0;
 };
 
+/*
+
+    Метод перебора.
+
+    Сделан в соответствии с pdf (рукописной) документацией (на почте группы от 03.03.2023).
+
+*/
 class BruteForceMethod : Optimization
 {
 protected:
-    float N_basic[5] = { 9, 99, 999, 9999, 99999 }; // Заданные значения N
+    float N_basic[5] = { 9, 99, 999, 9999, 99999 }; // Заданные значения N для метода перебора
     
 public:
     void algorithm(int iteration) override
     {
-        float min_y = numeric_limits<float>::max(),
-            E = pow(10, -iteration),
-            min_x,
-            E_guaranteed;
+        float E = pow(10, -iteration);
+        float minimal_y = numeric_limits<float>::max();  
+        float optimal_x, optimal_y, E_guaranteed;
 
         int N = N_basic[iteration - 1];
 
-        vector <float> x_vector(N);
-        vector <float> y_vector(N);
+        vector <float> x(N);
+        vector <float> y(N);
 
         for (int i = 1; i < N; i++)
         {
-            x_vector[i] = a + i * ((b - a) / (N + 1.0f));
-            y_vector[i] = f(x_vector[i]);
+            x[i] = a + i * ((b - a) / (N + 1.0f));
+            y[i] = f(x[i]);
 
-            if (y_vector[i] < min_y)
+            if (y[i] < minimal_y)
             {
-                min_y = y_vector[i];
-                min_x = x_vector[i];
+                minimal_y = y[i];
+                optimal_x = x[i];
             }
         }
 
+        optimal_y = minimal_y;
+
         E_guaranteed = (b - a) / (N + 1);
 
-        responseOutput(E, min_x, min_y, E_guaranteed, N, N);
+        responseOutput(E, optimal_x, optimal_y, E_guaranteed, N, N);
     }
 };
 
+/*
+
+    Пассивный оптимальный алгоритм.
+
+    Сделан в соответствии с pdf (рукописной) документацией (на почте группы от 03.03.2023).
+
+*/
 class PassivOptimalAlgorithm : Optimization
 {
 protected:
-    float N_basic[5] = { 9, 98, 998, 9998, 99998 }; // Заданные значения N
+    float N_basic[5] = { 9, 98, 998, 9998, 99998 }; // Заданные значения N для пассивного оптимального алгоритма
 public:
     void algorithm(int iteration) override
     {
-        float E = pow(10, -iteration),
-            _x,
-            min_y = numeric_limits<float>::max(),
-            _y,
-            delta = E / 100, E_guaranteed;
+        float E = pow(10, -iteration);
+        float delta = E / 100;
+        float minimal_y = numeric_limits<float>::max();
+        float optimal_x, optimal_y, E_guaranteed;
 
-        int N = N_basic[iteration - 1],
-            l;
+        int N = N_basic[iteration - 1];
+        int l;
 
         if (N % 2 == 0)
         {
-            vector <float> x_vector(N + 2);
-            vector <float> y_vector(N + 2);
+            vector <float> x(N + 2);
+            vector <float> y(N + 2);
 
-            x_vector[0] = a;
-            x_vector[N + 1] = b;
+            x[0] = a;
+            x[N + 1] = b;
             float k = N / 2;
 
             for (int i = 1; i < k; i++)
             {
-                x_vector[2 * i] = a + i * ((b - a) / (k + 1));
-                x_vector[2 * i - 1] = x_vector[2 * i] - delta;
+                x[2 * i] = a + i * ((b - a) / (k + 1));
+                x[2 * i - 1] = x[2 * i] - delta;
             }
 
             for (int i = 1; i < N; i++)
             {
-                y_vector[i] = f(x_vector[i]);
+                y[i] = f(x[i]);
             }
 
             for (int i = 1; i < N; i++)
             {
-                if (y_vector[i] < min_y)
+                if (y[i] < minimal_y)
                 {
-                    min_y = y_vector[i];
+                    minimal_y = y[i];
                     l = i;
                 }
             }
 
-            _x = (x_vector[l - 1] + x_vector[l + 1]) / 2;
-            _y = f(_x);
-            E_guaranteed = (x_vector[l + 1] - x_vector[l - 1]) / 2;
+            optimal_x = (x[l - 1] + x[l + 1]) / 2;
+            optimal_y = f(optimal_x);
+            E_guaranteed = (x[l + 1] - x[l - 1]) / 2;
         }
         else
         {
-            vector <float> x_vector(N);
-            vector <float> y_vector(N);
-            _y = numeric_limits<float>::max();
+            vector <float> x(N);
+            vector <float> y(N);
 
             for (int i = 1; i < N; i++)
             {
-                x_vector[i] = a + i * ((b - a) / (N + 1));
-                y_vector[i] = f(x_vector[i]);
+                x[i] = a + i * ((b - a) / (N + 1));
+                y[i] = f(x[i]);
 
-                if (y_vector[i - 1] < _y)
+                if (y[i - 1] < minimal_y)
                 {
-                    _y = y_vector[i];
-                    _x = x_vector[i];
+                    minimal_y = y[i];
+                    optimal_x = x[i];
                 }
             }
 
+            optimal_y = minimal_y;
             E_guaranteed = (b - a) / (N + 1);
         }
 
-        responseOutput(E, _x, _y, E_guaranteed, N, N);
+        responseOutput(E, optimal_x, optimal_y, E_guaranteed, N, N);
     }
 };
 
+/*
+
+    Метод поразрядного поиска.
+
+    Сделан в соответствии с pdf (рукописной) документацией от (на почте группы 03.03.2023).
+
+*/
 class BitwiseSearchMethod : Optimization
 {
 public:
     void algorithm(int iteration) override
     {
-        float h = (b - a) / 4,
-            E = pow(10, -iteration),
-            x1, x2, y1, y2;
+        float E = pow(10, -iteration);
+        float h = (b - a) / 4;
+        float x0, x1, y0, y1;
 
         int N = 1;
 
-        x1 = a;
-        y1 = f(x1);
+        x0 = a;
+        y0 = f(x0);
 
         do
         {
-            x2 = x1 + h;
-            y2 = f(x2);
+            x1 = x0 + h;
+            y1 = f(x1);
             N++;
 
-            if (y1 > y2)
+            if (y0 > y1)
             {
-                x1 = x2;
-                y1 = y2;
+                x0 = x1;
+                y0 = y1;
 
-                if ((a < x1) && (x1 < b))
+                if ((a < x0) && (x0 < b))
                 {
                     continue;
                 }
@@ -182,17 +203,24 @@ public:
             }
             else
             {
-                x1 = x2;
-                y1 = y2;
+                x0 = x1;
+                y0 = y1;
                 h = -h / 4;
                 continue;
             }
         } while (true);
 
-        responseOutput(E, x1, y1, h, N, N); // Е гарантированное = h
+        responseOutput(E, x0, y0, h, N, N); // Е гарантированное = h
     }
 };
 
+/*
+
+    Метод деления отрезка пополам.
+
+    Сделан в соответствии с docx (нерукописной) документацией (на почте группы от 27.02.2023).
+
+*/
 class DivisionMethod : Optimization
 {
 public:
@@ -249,6 +277,13 @@ public:
     }
 };
 
+/*
+
+    Метод дихотомии.
+
+    Сделан в соответствии с pdf (рукописной) документацией (на почте группы от 27.02.2023).
+
+*/
 class DichotomyMethod : Optimization
 {
 public:
@@ -287,6 +322,13 @@ public:
     }
 };
 
+/*
+
+    Метод золотого сечения.
+
+    Сделан в соответствии с pdf (рукописной) документацией (на почте группы от 27.02.2023).
+
+*/
 class GoldenRatioMethod : Optimization
 {
 public:
