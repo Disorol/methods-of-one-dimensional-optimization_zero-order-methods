@@ -208,6 +208,7 @@ public:
                 h = -h / 4;
                 continue;
             }
+
         } while (true);
 
         responseOutput(E, x0, y0, h, N, N); // Е гарантированное = h
@@ -226,54 +227,55 @@ class DivisionMethod : Optimization
 public:
     void algorithm(int iteration) override
     {
-        float E = pow(10, -iteration),
-            a_changeable = a,
-            b_changeable = b,
-            Eg;
+        float E = pow(10, -iteration);
+        float a_changeable = a, b_changeable = b;
+        float E_guaranteed, l;
 
-        vector <float> x_vector(4);
-        vector <float> y_vector(4);
+
+        vector <float> x(4);
+        vector <float> y(4);
+
+        x[1] = (a_changeable + b_changeable) / 2;
+        y[1] = f(x[1]);
 
         int N = 1;
 
-        x_vector[1] = (a_changeable + b_changeable) / 2;
-        y_vector[1] = f(x_vector[1]);
-
         do
         {
-            x_vector[0] = (a_changeable + x_vector[1]) / 2;
-            y_vector[0] = f(x_vector[0]);
+            x[0] = (a_changeable + x[1]) / 2;
+            y[0] = f(x[0]);
             N++;
 
-            if (y_vector[0] <= y_vector[1])
+            if (y[0] <= y[1])
             {
-                b_changeable = x_vector[1];
-                x_vector[1] = x_vector[0];
-                y_vector[1] = y_vector[0];
+                b_changeable = x[1];
+                x[1] = x[0];
+                y[1] = y[0];
             }
             else
             {
-                x_vector[2] = (b + x_vector[1]) / 2;
-                y_vector[2] = f(x_vector[2]);
+                x[2] = (b_changeable + x[1]) / 2;
+                y[2] = f(x[2]);
                 N++;
 
-                if (y_vector[1] <= y_vector[2])
+                if (y[1] <= y[2])
                 {
-                    a_changeable = x_vector[0];
-                    b_changeable = x_vector[2];
+                    a_changeable = x[0];
+                    b_changeable = x[2];
                 }
                 else
                 {
-                    a_changeable = x_vector[1];
-                    x_vector[1] = x_vector[2];
-                    y_vector[1] = y_vector[2];
+                    a_changeable = x[1];
+                    x[1] = x[2];
+                    y[1] = y[2];
                 }
             }
+
         } while (b_changeable - a_changeable > 2 * E);
 
-        Eg = (b_changeable - a_changeable) / 2;
+        E_guaranteed = (b_changeable - a_changeable) / 2;
 
-        responseOutput(E, x_vector[1], y_vector[1], Eg, N, N);
+        responseOutput(E, x[1], y[1], E_guaranteed, N, N);
     }
 };
 
@@ -289,11 +291,10 @@ class DichotomyMethod : Optimization
 public:
     void algorithm(int iteration) override
     {
-        float E = pow(10, -iteration),
-            delta = E / 100,
-            a_changeable = a,
-            b_changeable = b,
-            x, _x, y1, y2, _y, E_guaranteed;
+        float E = pow(10, -iteration);
+        float delta = E / 100;
+        float a_changeable = a, b_changeable = b;
+        float x, optimal_x, y1, y2, optimal_y, E_guaranteed;
 
         int N = 0;
 
@@ -302,7 +303,7 @@ public:
             x = (a_changeable + b_changeable) / 2;
             y1 = f(x - delta);
             y2 = f(x + delta);
-            N = N + 2;
+            N += 2;
 
             if (y1 < y2)
             {
@@ -312,13 +313,14 @@ public:
             {
                 a_changeable = x - delta;
             }
+
         } while (b_changeable - a_changeable > 2 * E);
 
-        _x = (a_changeable + b_changeable) / 2;
-        _y = f(x);
+        optimal_x = (a_changeable + b_changeable) / 2;
+        optimal_y = f(x);
         E_guaranteed = (b_changeable - a_changeable) / 2;
 
-        responseOutput(E, _x, _y, E_guaranteed, N, N);
+        responseOutput(E, optimal_x, optimal_y, E_guaranteed, N, N);
     }
 };
 
@@ -334,18 +336,18 @@ class GoldenRatioMethod : Optimization
 public:
     void algorithm(int iteration) override
     {
-        float E = pow(10, -iteration),
-            r = (1 + sqrt(5)) / 2,
-            a_changeable = a,
-            b_changeable = b,
-            x1, x2, _x, y1, y2, _y, E_guaranteed;
-
-        int N = 2;
+        float E = pow(10, -iteration);
+        float r = (1 + sqrt(5)) / 2;
+        float a_changeable = a, b_changeable = b;
+        float x1, x2, optimal_x, y1, y2, optimal_y, E_guaranteed;
 
         x1 = b_changeable - (b_changeable - a_changeable) / r;
-        x2 = a_changeable + (b_changeable - a_changeable) / r;
         y1 = f(x1);
+
+        x2 = a_changeable + (b_changeable - a_changeable) / r;
         y2 = f(x2);
+
+        int N = 2;
 
         do
         {
@@ -368,7 +370,7 @@ public:
 
             N++;
 
-        } while (b_changeable - a_changeable > 2 / E * r);
+        } while (b_changeable - a_changeable > 2 * E * r);
 
         if (y1 < y2)
         {
@@ -379,77 +381,79 @@ public:
             a_changeable = x1;
         }
 
-        _x = (a_changeable + b_changeable) / 2;
-        _y = f(_x);
+        optimal_x = (a_changeable + b_changeable) / 2;
+        optimal_y = f(optimal_x);
         E_guaranteed = (b_changeable - a_changeable) / 2;
 
-        responseOutput(E, _x, _y, E_guaranteed, N, N);
+        responseOutput(E, optimal_x, optimal_y, E_guaranteed, N, N);
     }
 };
 
 int main()
 {
+    setlocale(LC_ALL, "Russian");
+
+    cout << "Метод перебора:\n\n";
+
     BruteForceMethod* bruteForceMethod = new BruteForceMethod();
     
     for (int i = 1; i <= 5; i++)
         bruteForceMethod->algorithm(i);
 
-    cout << "\n";
-
     bruteForceMethod->~BruteForceMethod();
 
     delete bruteForceMethod;
+
+    cout << "\nПассивный оптимальный алгоритм:\n\n";
 
     PassivOptimalAlgorithm* passivOptimalAlgorithm = new PassivOptimalAlgorithm();
 
     for (int i = 1; i <= 5; i++)
         passivOptimalAlgorithm->algorithm(i);
 
-    cout << "\n";
-
     passivOptimalAlgorithm->~PassivOptimalAlgorithm();
 
     delete passivOptimalAlgorithm;
+
+    cout << "\nМетод поразрядного поиска:\n\n";
 
     BitwiseSearchMethod* bitwiseSearchMethod = new BitwiseSearchMethod();
 
     for (int i = 1; i <= 5; i++)
         bitwiseSearchMethod->algorithm(i);
 
-    cout << "\n";
-
     bitwiseSearchMethod->~BitwiseSearchMethod();
 
     delete bitwiseSearchMethod;
+
+    cout << "\nМетод деления отрезка пополам:\n\n";
 
     DivisionMethod* divisionMethod = new DivisionMethod();
 
     for (int i = 1; i <= 5; i++)
         divisionMethod->algorithm(i);
 
-    cout << "\n";
-
     divisionMethod->~DivisionMethod();
 
     delete divisionMethod;
+
+    cout << "\nМетод дихотомии:\n\n";
 
     DichotomyMethod* dichotomyMethod = new DichotomyMethod();
 
     for (int i = 1; i <= 5; i++)
         dichotomyMethod->algorithm(i);
 
-    cout << "\n";
-
     dichotomyMethod->~DichotomyMethod();
 
     delete dichotomyMethod;
+
+    cout << "\nМетод золотого сечения:\n\n";
 
     GoldenRatioMethod* goldenRatioMethod = new GoldenRatioMethod();
 
     for (int i = 1; i <= 5; i++)
         goldenRatioMethod->algorithm(i);
-
-    cout << "\n";
 
     goldenRatioMethod->~GoldenRatioMethod();
 
